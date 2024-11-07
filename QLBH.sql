@@ -1,4 +1,4 @@
-
+﻿
 
 CREATE DATABASE QLBH
 GO
@@ -84,7 +84,7 @@ INSERT INTO LOAIKH (MA_LOAIKH, TEN_LOAIKH)			VALUES (1, "VANG LAI"), (2, "THUONG
 ALTER TABLE KHACHHANG	ADD CONSTRAINT fk_maloaikh	FOREIGN KEY (MAKH)		REFERENCES LOAI_KH(MA_LOAIKH)
 
 -- Q7 DON VI TINH CUA SAN PHAM CHI CO THE LA 
--- (�cay�,�hop�,�cai�,�quyen�,�chuc�)
+-- (“cay”,”hop”,”cai”,”quyen”,”chuc”)
 ALTER TABLE SANPHAM		ADD CONSTRAINT chk_dvt		CHECK (DVT IN ("CAY", "HOP", "CAI", "QUYEN", "CHUC"))
 
 -- Q8 GIA BAN PHAI TU 500 DONG TRO LEN
@@ -399,3 +399,181 @@ HAVING COUNT(DISTINCT SANPHAM.MASP) = (
     FROM SANPHAM
     WHERE NUOCSX = 'Singapore'
 )
+
+-- 20. Có bao nhiêu hóa đơn không phải của khách hàng đăng ký thành viên mua?
+SELECT COUNT(*)
+FROM HOADON
+JOIN KHACHHANG ON HOADON.MAKH = KHACHHANG.MAKH
+WHERE KHACHHANG.LOAIKH IS NULL
+
+-- 21. Có bao nhiêu sản phẩm khác nhau được bán ra trong năm 2006.
+SELECT COUNT(DISTINCT MASP)
+FROM CTHD
+JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+WHERE YEAR(HOADON.NGHD) = 2006
+
+-- 22. Cho biết trị giá hóa đơn cao nhất, thấp nhất là bao nhiêu ?
+SELECT MAX(TRIGIA), MIN(TRIGIA)
+FROM HOADON
+
+-- 23. Trị giá trung bình của tất cả các hóa đơn được bán ra trong năm 2006 là bao nhiêu?
+SELECT AVG(TRIGIA)
+FROM HOADON
+WHERE YEAR(NGHD) = 2006
+
+-- 24. Tính doanh thu bán hàng trong năm 2006.
+SELECT SUM(TRIGIA)
+FROM HOADON
+WHERE YEAR(NGHD) = 2006
+
+-- 25. Tìm số hóa đơn có trị giá cao nhất trong năm 2006.
+SELECT COUNT(*)
+FROM HOADON
+WHERE TRIGIA = (
+	SELECT MAX(TRIGIA)
+	FROM HOADON
+	WHERE YEAR(NGHD) = 2006
+)
+-- 26. Tìm họ tên khách hàng đã mua hóa đơn có trị giá cao nhất trong năm 2006.
+SELECT KH.HOTEN
+FROM KHACHHANG KH
+JOIN HOADON HD ON KH.MAKH = HD.MAKH
+WHERE HD.TRIGIA = (
+	SELECT MAX(TRIGIA)
+	FROM HOADON
+	WHERE YEAR(NGHD) = 2006
+)
+-- 27. In ra danh sách 3 khách hàng (MAKH, HOTEN) có doanh số cao nhất.
+SELECT TOP 3 MAKH, HOTEN
+FROM KHACHHANG
+ORDER BY DOANHSO DESC
+
+-- 28. In ra danh sách các sản phẩm (MASP, TENSP) có giá bán bằng 1 trong 3 mức giá cao nhất.
+SELECT SP.MASP, SP.TENSP
+FROM SANPHAM SP
+WHERE SP.GIA IN (
+	SELECT TOP 3 GIA
+	FROM SANPHAM
+	ORDER BY GIA DESC
+)
+
+-- 29. In ra danh sách các sản phẩm (MASP, TENSP) do “Thai Lan” sản xuất có giá bằng 1 trong 3 mức
+-- giá cao nhất (của tất cả các sản phẩm).
+SELECT SP.MASP, SP.TENSP
+FROM SANPHAM SP
+WHERE SP.NUOCSX = 'Thai Lan'
+	AND SP.GIA IN (
+		SELECT TOP 3 GIA
+		FROM SANPHAM
+		ORDER BY GIA DESC
+	)
+
+-- 30. In ra danh sách các sản phẩm (MASP, TENSP) do “Trung Quoc” sản xuất có giá bằng 1 trong 3 mức
+-- giá cao nhất (của sản phẩm do “Trung Quoc” sản xuất).
+SELECT SP.MASP, SP.TENSP
+FROM SANPHAM SP
+WHERE SP.NUOCSX = 'Trung Quoc'
+	AND SP.GIA IN (
+		SELECT TOP 3 GIA
+		FROM SANPHAM
+		WHERE NUOCSX = 'Trung Quoc'
+		ORDER BY GIA DESC
+	)
+
+-- 31. * In ra danh sách 3 khách hàng có doanh số cao nhất (sắp xếp theo kiểu xếp hạng).
+SELECT TOP 3 MAKH, HOTEN, DOANHSO
+FROM KHACHHANG
+ORDER BY DOANHSO DESC
+
+-- 32. Tính tổng số sản phẩm do “Trung Quoc” sản xuất.
+SELECT SUM(1)
+FROM SANPHAM
+WHERE NUOCSX = 'Trung Quoc'
+
+-- 33. Tính tổng số sản phẩm của từng nước sản xuất.
+SELECT NUOCSX, SUM(1)
+FROM SANPHAM
+GROUP BY NUOCSX
+
+-- 34. Với từng nước sản xuất, tìm giá bán cao nhất, thấp nhất, trung bình của các sản phẩm.
+SELECT MAX(GIA), MIN(GIA), AVG(GIA), NUOCSX
+FROM SANPHAM
+GROUP BY NUOCSX
+
+-- 35. Tính doanh thu bán hàng mỗi ngày.
+SELECT NGHD, SUM(TRIGIA)
+FROM HOADON
+GROUP BY NGHD
+-- 36. Tính tổng số lượng của từng sản phẩm bán ra trong tháng 10/2006.
+SELECT MASP, SUM(SL)
+FROM CTHD
+JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+WHERE MONTH(HOADON.NGHD) = 10 AND YEAR(HOADON.NGHD) = 2006
+GROUP BY MASP
+
+-- 37. Tính doanh thu bán hàng của từng tháng trong năm 2006.
+SELECT MONTH(NGHD) AS THANG, SUM(TRIGIA) AS DOANHSO
+FROM HOADON
+WHERE YEAR(NGHD) = 2006
+GROUP BY MONTH(NGHD)
+
+-- 38. Tìm hóa đơn có mua ít nhất 4 sản phẩm khác nhau.
+SELECT SOHD
+FROM CTHD
+GROUP BY SOHD
+HAVING COUNT(DISTINCT MASP) >= 4
+
+-- 39. Tìm hóa đơn có mua 3 sản phẩm do “Viet Nam” sản xuất (3 sản phẩm khác nhau).
+SELECT CTHD.SOHD
+FROM CTHD
+JOIN SANPHAM SP ON CTHD.MASP = SP.MASP
+WHERE SP.NUOCSX = 'Viet Nam'
+GROUP BY CTHD.SOHD
+HAVING COUNT(DISTINCT CTHD.MASP) = 3
+
+-- 40. Tìm khách hàng (MAKH, HOTEN) có số lần mua hàng nhiều nhất.
+SELECT KH.MAKH, KH.HOTEN
+FROM KHACHHANG KH
+JOIN HOADON HD ON KH.MAKH = HD.MAKH
+GROUP BY KH.MAKH, KH.HOTEN
+HAVING COUNT(HD.SOHD) = (
+	SELECT MAX(SO_LAN_MUA)
+	FROM (
+		SELECT COUNT(SOHD) AS SO_LAN_MUA
+		FROM HOADON
+		GROUP BY MAKH
+	) AS Subquery
+)
+
+-- 41. Tháng mấy trong năm 2006, doanh số bán hàng cao nhất ?
+SELECT TOP 1 MONTH(NGHD) AS THANG, SUM(TRIGIA) AS DOANHSO
+FROM HOADON
+WHERE YEAR(NGHD) = 2006
+GROUP BY MONTH(NGHD)
+ORDER BY DOANHSO DESC 
+
+
+-- 42. Tìm sản phẩm (MASP, TENSP) có tổng số lượng bán ra thấp nhất trong năm 2006.
+SELECT SP.MASP, SP.TENSP
+
+FROM SANPHAM SP
+JOIN CTHD ON SP.MASP = CTHD.MASP
+JOIN HOADON HD ON CTHD.SOHD = HD.SOHD
+WHERE YEAR(HD.NGHD) = 2006
+GROUP BY SP.MASP, SP.TENSP
+HAVING SUM(CTHD.SL) = (
+	SELECT MIN(TONG_SL)
+	FROM (
+		SELECT SUM(SL) AS TONG_SL
+		FROM CTHD
+		JOIN HOADON ON CTHD.SOHD = HOADON.SOHD
+		WHERE YEAR(HOADON.NGHD) = 2006
+		GROUP BY MASP
+	) AS Subquery
+)
+
+-- 43. *Mỗi nước sản xuất, tìm sản phẩm (MASP,TENSP) có giá bán cao nhất.
+
+-- 44. Tìm nước sản xuất sản xuất ít nhất 3 sản phẩm có giá bán khác nhau.
+
+-- 45. *Trong 10 khách hàng có doanh số cao nhất, tìm khách hàng có số lần mua hàng nhiều nhất
