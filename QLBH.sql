@@ -573,7 +573,19 @@ HAVING SUM(CTHD.SL) = (
 )
 
 -- 43. *Mỗi nước sản xuất, tìm sản phẩm (MASP,TENSP) có giá bán cao nhất.
+SELECT NUOCSX, MASP, TENSP, GIA
+FROM SANPHAM SP
+WHERE GIA = (
+    SELECT MAX(GIA)
+    FROM SANPHAM
+    WHERE NUOCSX = SP.NUOCSX
+)
+ORDER BY NUOCSX
 
 -- 44. Tìm nước sản xuất sản xuất ít nhất 3 sản phẩm có giá bán khác nhau.
+SELECT NUOCSX
+FROM SANPHAM
+GROUP BY NUOCSX
+HAVING COUNT(DISTINCT GIA) >= 3
 
 -- 45. *Trong 10 khách hàng có doanh số cao nhất, tìm khách hàng có số lần mua hàng nhiều nhất
